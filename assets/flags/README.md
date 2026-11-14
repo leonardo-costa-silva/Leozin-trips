@@ -1,0 +1,1 @@
+As 197 bandeiras PNG foram obtidas de FlagCDN (https://flagcdn.com/) em 13/11/2026 e são servidas localmente. Os nomes usam códigos ISO de duas letras, com XK para Kosovo. Não há API necessária para exibi-las.
