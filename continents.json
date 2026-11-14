@@ -1,0 +1,44 @@
+[
+  {
+    "slug": "europa",
+    "name": "Europa",
+    "count": 51,
+    "climate": "north"
+  },
+  {
+    "slug": "america-do-sul",
+    "name": "América do Sul",
+    "count": 12,
+    "climate": "both"
+  },
+  {
+    "slug": "america-do-norte",
+    "name": "América do Norte",
+    "count": 16,
+    "climate": "north"
+  },
+  {
+    "slug": "america-central",
+    "name": "América Central",
+    "count": 7,
+    "climate": "tropical"
+  },
+  {
+    "slug": "asia",
+    "name": "Ásia",
+    "count": 50,
+    "climate": "both"
+  },
+  {
+    "slug": "africa",
+    "name": "África",
+    "count": 54,
+    "climate": "both"
+  },
+  {
+    "slug": "oceania",
+    "name": "Oceania",
+    "count": 14,
+    "climate": "both"
+  }
+]

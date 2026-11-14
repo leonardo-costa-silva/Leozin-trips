@@ -1,0 +1,91 @@
+'use strict';
+const routePreferences={rail:'Preferência por trens',air:'Preferência por voos',balanced:'Equilíbrio entre trem e avião'};
+function routeMinutes(value){if(!value)return null;const match=String(value).match(/(\d+)h(?:(\d+))?/);return match?Number(match[1])*60+Number(match[2]||0):null;}
+function routeTime(minutes){return `${Math.floor(minutes/60)}h${String(minutes%60).padStart(2,'0')}`;}
+function routeCityKey(value){const key=String(value||'').split('(')[0].normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();return ({londres:'london',bruxelas:'brussels',amsterda:'amsterdam',zurique:'zurich',viena:'vienna',milao:'milan',munique:'munich',praga:'prague',varsovia:'warsaw',colonia:'cologne',roma:'rome',lisboa:'lisbon',copenhague:'copenhagen',estocolmo:'stockholm',dublin:'dublin',belgrado:'belgrade',budapeste:'budapest',pequim:'beijing','nova york':'new york',montreal:'montreal','singapura':'singapore',hanoi:'hanoi',moscou:'moscow',minsk:'minsk'})[key]||key;}
+function routeAirportNode(iata){const airport=countryFlightData.airports[iata];return {id:'air:'+iata,country:airport?.[0]||null,city:airport?.[1]||iata,label:`${airport?.[1]||iata} (${iata})`,cityKey:routeCityKey(airport?.[1]||iata)};}
+function routeRailNode(country,station){return {id:'rail:'+country+':'+station,country,city:station.split('(')[0].trim(),label:station,cityKey:routeCityKey(station)};}
+function routeUnknownNode(country){return {id:'unknown:'+country,country,city:null,label:worldCountries.find(c=>c.code===country)?.name||country,cityKey:null};}
+function routeAirEdge(row,origin){const [a,b,minutes,period,sourceId]=row;const from=origin||a,to=from===a?b:a;return {id:`air:${from}>${to}`,kind:'flight',from:routeAirportNode(from),to:routeAirportNode(to),minutes,duration:routeTime(minutes),estimated:true,confidence:'historical',period,sourceId,source:`https://airportmiles.com/api/v1/routes/${[a,b].sort().join('-').toLowerCase()}.json`,note:'Registro estatístico nos dois sentidos. Operação atual, partida neste sentido e sazonalidade não verificadas; duração calculada.'};}
+function routeEntryCandidates(code,start){
+ if(code==='BR')return [{id:'start:BR',kind:'origin',country:'BR',from:routeAirportNode('GRU'),to:routeAirportNode('GRU'),minutes:0,dateStatus:'origin',note:'A viagem começa em São Paulo; não é necessário voo para entrar no Brasil.'}];
+ const day=new Date(tripDate(start)).getUTCDay()||7;
+ const primary=directFlights.filter(f=>f.country===code&&f.origin==='GRU'&&f.nonstop&&f.status==='published').flatMap(f=>{
+  const inWeek=!!f.schedulePeriod&&start>=f.schedulePeriod.start&&start<=f.schedulePeriod.end;
+  const carriers=inWeek?(f.weekdays||[]).filter(w=>w.days.includes(day)).map(w=>w.airline):f.airlines;
+  if(inWeek&&f.weekdays?.length&&!carriers.length)return [];
+  const seasonal=!!f.seasonal||!!f.seasonalAirlines?.length;
+  const node=routeAirportNode(f.airport);node.country=code;node.city=f.city;node.label=`${f.city} (${f.airport})`;node.cityKey=routeCityKey(f.city);
+  return [{id:'entry:GRU>'+f.airport,kind:'entry',country:code,from:routeAirportNode('GRU'),to:node,minutes:routeMinutes(f.duration),duration:f.duration,airlines:carriers||f.airlines,source:f.source,scheduleSource:f.scheduleSource,period:f.schedulePeriod?.label||'Período não informado',dateStatus:inWeek&&!seasonal?'reference-day':'date-unverified',seasonal,note:inWeek&&!seasonal?'O dia da semana consta da grade-base indicada; confirme o voo na data escolhida.':'Voo direto publicado no catálogo; a operação na data escolhida ainda não está verificada.'}];
+ });
+ if(!primary.length)return [];
+ const primaryAirports=new Set(directFlights.filter(f=>f.country===code&&f.origin==='GRU'&&f.nonstop&&f.status==='published').map(f=>f.airport));
+ const additional=countryFlightData.routes.filter(row=>(row[0]==='GRU'||row[1]==='GRU')&&countryFlightData.airports[row[0]==='GRU'?row[1]:row[0]][0]===code&&!primaryAirports.has(row[0]==='GRU'?row[1]:row[0])).map(row=>({...routeAirEdge(row,'GRU'),id:'entry-ref:'+row[0]+'-'+row[1],kind:'entry',country:code,dateStatus:'date-unverified'}));
+ return [...primary,...additional];
+}
+function routeGap(a,b,label){return {id:`gap:${a}>${b}`,kind:'gap',from:routeUnknownNode(a),to:routeUnknownNode(b),minutes:null,label:label||'Ligação a definir',note:'Não há ligação direta adequada cadastrada entre estes países. Isso não prova inexistência de serviço; pode exigir conexão ou outro transporte.'};}
+function buildRouteGraph(codes){
+ const selected=new Set(codes),pairs=new Map(),returns=new Map();
+ const add=edge=>{const key=edge.from.country+'>'+edge.to.country;if(!pairs.has(key))pairs.set(key,[]);pairs.get(key).push(edge);};
+ for(const row of countryFlightData.routes){const a=countryFlightData.airports[row[0]][0],b=countryFlightData.airports[row[1]][0];add(routeAirEdge(row,row[0]));add(routeAirEdge(row,row[1]));
+  if(row[0]==='GRU'||row[1]==='GRU'){const foreign=row[0]==='GRU'?row[1]:row[0],country=countryFlightData.airports[foreign][0];if(country!=='BR'){if(!returns.has(country))returns.set(country,[]);returns.get(country).push({...routeAirEdge(row,foreign),id:'return:'+foreign+'>GRU'});}}
+ }
+ const trains=[...railRoutes,...worldRailRoutes,...railReview.filter(r=>['duration-unverified','seasonal'].includes(r.status))];
+ for(const r of trains){for(const reverse of [false,true]){const a=reverse?r.b:r.a,b=reverse?r.a:r.b,from=reverse?r.to:r.from,to=reverse?r.from:r.to;add({id:`train:${r.id}:${a}>${b}`,kind:'train',from:routeRailNode(a,from),to:routeRailNode(b,to),minutes:routeMinutes(r.duration),duration:r.duration,operator:r.company||r.operator,source:r.source,confidence:r.status==='published'?'published':'review',seasonal:r.status==='seasonal',note:r.note||'Ligação publicada; duração e operação variam por sentido e data.'});}}
+ const degree=new Map();for(const key of pairs.keys()){const country=key.split('>')[0];degree.set(country,(degree.get(country)||0)+1);}const networkCodes=[...degree.keys()].filter(code=>code!=='BR'&&worldCountries.some(c=>c.code===code));const hubs=networkCodes.sort((a,b)=>(selected.has(b)?10000:0)+(degree.get(b)||0)-(selected.has(a)?10000:0)-(degree.get(a)||0)).slice(0,codes.length<=12?networkCodes.length:8);return {pairs,returns,hubs,cache:new Map()};
+}
+function routeTransfer(from,to){if(!from||!to||!from.cityKey||!to.cityKey||from.id===to.id)return null;return {kind:from.cityKey===to.cityKey?'local':'intercity',country:from.country,from:from.label,to:to.label,note:from.cityKey===to.cityKey?'Transfer entre aeroporto/estações; tempo e disponibilidade não incluídos.':'Deslocamento interno entre cidades a organizar; transporte e tempo não incluídos.'};}
+function routeTransferCost(from,to){const transfer=routeTransfer(from,to);return !transfer?0:transfer.kind==='local'?60:900;}
+function routeEdgeCost(edge,preference){if(edge.kind==='connection')return edge.parts.reduce((sum,part)=>sum+routeEdgeCost(part,preference),0)+routeTransferCost(edge.parts[0].to,edge.parts[1].from)+120;if(edge.kind==='gap')return 10000000;if(edge.kind==='origin'||edge.kind==='end')return 0;const time=edge.minutes??780;if(edge.kind==='train')return time+45+(edge.minutes===null?200:0)+(edge.confidence==='review'?120:0)+(preference==='air'?700:0);return time+180+(edge.confidence==='historical'?150:0)+(preference==='rail'?1400:0);}
+function routeConnection(first,second){return {id:'connection:'+first.id+'|'+second.id,kind:'connection',parts:[first,second],from:first.from,to:second.to,viaCountry:first.to.country,minutes:first.minutes!==null&&second.minutes!==null?first.minutes+second.minutes:null};}
+function routeViaCandidates(graph,a,b,preference,previous){const choices=[];for(const hub of graph.hubs){if(hub===a||hub===b)continue;const first=graph.pairs.get(a+'>'+hub),second=graph.pairs.get(hub+'>'+b);if(!first?.length||!second?.length)continue;const firstBest=[...first].sort((x,y)=>routeEdgeCost(x,preference)+routeTransferCost(previous,x.from)-routeEdgeCost(y,preference)-routeTransferCost(previous,y.from)).slice(0,2);for(const one of firstBest){const two=[...second].sort((x,y)=>routeEdgeCost(x,preference)+routeTransferCost(one.to,x.from)-routeEdgeCost(y,preference)-routeTransferCost(one.to,y.from))[0];choices.push(routeConnection(one,two));}}return choices;}
+function routeFlattenLegs(legs){return legs.flatMap(leg=>leg.kind==='connection'?routeFlattenLegs(leg.parts):[leg]);}
+function routeBestEdges(graph,a,b,preference,previous,limit=2,lastStep=false){const cacheKey=[a,b,preference,previous?.id||'',limit,lastStep].join('|');if(graph.cache.has(cacheKey))return graph.cache.get(cacheKey);let candidates=graph.pairs.get(a+'>'+b);if(!candidates?.length)candidates=routeViaCandidates(graph,a,b,preference,previous);if(!candidates.length)candidates=[routeGap(a,b)];const best=[];for(const edge of candidates){const cost=routeEdgeCost(edge,preference)+routeTransferCost(previous,edge.from);const back=lastStep?routeReturn(graph,b,edge.to,preference):null;const rank=cost+(back?routeEdgeCost(back,preference)+routeTransferCost(edge.to,back.from):0);best.push({edge,cost,rank});best.sort((x,y)=>x.rank-y.rank||x.edge.id.localeCompare(y.edge.id));if(best.length>limit)best.pop();}graph.cache.set(cacheKey,best);return best;}
+function routeReturn(graph,last,previous,preference){
+ if(last==='BR')return {id:'end:BR',kind:'end',from:previous||routeUnknownNode('BR'),to:routeAirportNode('GRU'),minutes:0,note:'Retorno até São Paulo dentro do Brasil a organizar, se necessário.'};
+ let edges=graph.returns.get(last)||[];
+ if(!edges.length){edges=[];for(const hub of graph.hubs){if(hub===last)continue;const first=graph.pairs.get(last+'>'+hub),back=graph.returns.get(hub);if(!first?.length||!back?.length)continue;for(const one of [...first].sort((a,b)=>routeEdgeCost(a,preference)+routeTransferCost(previous,a.from)-routeEdgeCost(b,preference)-routeTransferCost(previous,b.from)).slice(0,2)){const two=[...back].sort((a,b)=>routeEdgeCost(a,preference)+routeTransferCost(one.to,a.from)-routeEdgeCost(b,preference)-routeTransferCost(one.to,b.from))[0];edges.push(routeConnection(one,two));}}}
+ if(!edges.length)return {...routeGap(last,'BR','Volta a São Paulo a definir'),id:'return-gap:'+last};
+ return [...edges].sort((a,b)=>(routeEdgeCost(a,preference)+routeTransferCost(previous,a.from))-(routeEdgeCost(b,preference)+routeTransferCost(previous,b.from)))[0];
+}
+function routeComplete(graph,state,preference){const last=state.order.at(-1),back=routeReturn(graph,last,state.last,preference);return {...state,back,preference,score:state.score+routeEdgeCost(back,preference)+routeTransferCost(state.last,back.from),signature:[state.entry.id,...state.legs.map(l=>l.id),back.id].join('|')};}
+function routeArrivalRank(entry){if(entry.kind!=='connection')return entry.kind==='gap'?Infinity:0;const transfer=routeTransfer(entry.parts[0].to,entry.parts[1].from);return (transfer?transfer.kind==='local'?100000:200000:0)+routeEdgeCost(entry,'balanced');}
+function routeArrivalCompare(a,b){return routeArrivalRank(a)-routeArrivalRank(b)||a.id.localeCompare(b.id);}
+function routeConnectingEntries(graph,codes,start){const choices=[],hubEntries=new Map();const hubs=[...new Set(directFlights.filter(f=>f.origin==='GRU'&&f.nonstop&&f.status==='published'&&f.country!=='BR').map(f=>f.country))];for(const country of codes){const options=[];for(const hub of hubs){if(hub===country)continue;const onward=graph.pairs.get(hub+'>'+country);if(!onward?.length)continue;if(!hubEntries.has(hub))hubEntries.set(hub,routeEntryCandidates(hub,start));for(const first of hubEntries.get(hub)){const second=[...onward].sort((a,b)=>routeArrivalCompare(routeConnection(first,a),routeConnection(first,b)))[0];options.push({...routeConnection(first,second),id:'entry-connection:'+first.id+'|'+second.id,country});}}options.sort(routeArrivalCompare);if(options.length){const distinct=[],seen=new Set();for(const option of options){const hub=option.parts[0].to.id+'>'+option.parts[1].from.id;if(seen.has(hub))continue;seen.add(hub);distinct.push(option);if(distinct.length===3)break;}choices.push(...distinct);}else choices.push({...routeGap('BR',country,'Chegada com conexão a definir'),id:'entry-gap:'+country,country});}return choices;}
+function routeSearch(graph,codes,entries,preference){
+ const seeds=entries.map(entry=>({order:[entry.country],entry,legs:[],last:entry.to,score:routeEdgeCost(entry,preference)}));
+ if(codes.length>12){const plans=[];for(const seed of seeds.sort((a,b)=>a.score-b.score).slice(0,8)){for(const variation of [0,1]){let state=seed;while(state.order.length<codes.length){const next=codes.filter(code=>!state.order.includes(code)).map(code=>({code,...routeBestEdges(graph,state.order.at(-1),code,preference,state.last,1,state.order.length===codes.length-1)[0]})).sort((a,b)=>a.cost-b.cost||a.code.localeCompare(b.code));const choice=next[state.order.length===1?Math.min(variation,next.length-1):0];state={...state,order:[...state.order,choice.code],legs:[...state.legs,choice.edge],last:choice.edge.to,score:state.score+choice.cost};}plans.push(routeComplete(graph,state,preference));}}return plans.sort((a,b)=>a.score-b.score);}
+ let beam=seeds,width=codes.length<=8?40:18;
+ while(beam[0]?.order.length<codes.length){const expanded=[];for(const state of beam){for(const next of codes){if(state.order.includes(next))continue;for(const {edge,cost}of routeBestEdges(graph,state.order.at(-1),next,preference,state.last,2,state.order.length===codes.length-1))expanded.push({order:[...state.order,next],entry:state.entry,legs:[...state.legs,edge],last:edge.to,score:state.score+cost});}}
+  expanded.sort((a,b)=>a.score-b.score);const seen=new Set();beam=[];for(const state of expanded){const key=[state.entry.id,state.order.join(','),state.last.id].join('|');if(seen.has(key))continue;seen.add(key);beam.push(state);if(beam.length===width)break;}
+ }
+ return beam.map(state=>routeComplete(graph,state,preference)).sort((a,b)=>a.score-b.score);
+}
+function routeRailChoices(graph,a,b){
+ const direct=(graph.pairs.get(a+'>'+b)||[]).filter(edge=>edge.kind==='train');let choices=direct;
+ if(!direct.length){choices=[];for(const hub of graph.hubs){if(hub===a||hub===b)continue;const first=(graph.pairs.get(a+'>'+hub)||[]).filter(e=>e.kind==='train'),second=(graph.pairs.get(hub+'>'+b)||[]).filter(e=>e.kind==='train');for(const one of first){const two=[...second].sort((x,y)=>routeEdgeCost(x,'balanced')+routeTransferCost(one.to,x.from)-routeEdgeCost(y,'balanced')-routeTransferCost(one.to,y.from))[0];if(two)choices.push(routeConnection(one,two));}}}
+ return choices.sort((x,y)=>routeEdgeCost(x,'balanced')-routeEdgeCost(y,'balanced')).slice(0,3);
+}
+function planTripRoutes(input){
+ const days=tripDayCount(input.start,input.end),codes=[...new Set((input.countries||[]).filter(code=>worldCountries.some(c=>c.code===code)))];
+ if(days===null)return {error:'Escolha e aplique as datas de ida e volta.'};if(!codes.length)return {error:'Selecione pelo menos um país para planejar.'};
+ const graph=buildRouteGraph(codes),entries=codes.flatMap(code=>routeEntryCandidates(code,input.start));
+ const directCountries=[...new Set(entries.map(e=>e.country))],catalogCountries=codes.filter(code=>directFlights.some(f=>f.country===code&&f.origin==='GRU'&&f.nonstop&&f.status==='published'));
+ // Brasil já é o ponto de partida: não exige sair e retornar para visitá-lo.
+ const preferred=entries.some(e=>e.kind==='origin')?entries.filter(e=>e.kind==='origin'):entries;
+ const starts=preferred.length?preferred:routeConnectingEntries(graph,codes,input.start);
+ const pools=Object.keys(routePreferences).map(mode=>({mode,plans:routeSearch(graph,codes,starts,mode)}));
+ const plans=[],signatures=new Set();for(const pool of pools){const choice=pool.plans.find(p=>!signatures.has(p.signature));if(choice){plans.push(choice);signatures.add(choice.signature);}}
+ for(const pool of pools){if(plans.length>=3)break;for(const candidate of pool.plans){if(signatures.has(candidate.signature))continue;plans.push(candidate);signatures.add(candidate.signature);if(plans.length>=3)break;}}
+ const indirectCodes=codes.filter(code=>code!=='BR'&&!directCountries.includes(code));
+ const connectionEntries=routeConnectingEntries(graph,indirectCodes,input.start);
+ const arrivalConnections=indirectCodes.map(country=>({country,entries:connectionEntries.filter(e=>e.country===country)}));
+ if(preferred.length&&connectionEntries.length){const extraSeeds=[...connectionEntries].sort(routeArrivalCompare).slice(0,codes.length>12?4:18);const extra=routeSearch(graph,codes,extraSeeds,'balanced');const addedCountries=new Set();let count=0;
+  for(const candidate of extra){if(signatures.has(candidate.signature)||addedCountries.has(candidate.order[0]))continue;plans.push(candidate);signatures.add(candidate.signature);addedCountries.add(candidate.order[0]);if(++count===3)break;}
+  for(const candidate of extra){if(count>=3)break;if(signatures.has(candidate.signature))continue;plans.push(candidate);signatures.add(candidate.signature);count++;}
+ }
+ for(const plan of plans)plan.entryStrategy=plan.entry.kind==='connection'?'connection':plan.entry.kind==='gap'?'pending':plan.entry.kind==='origin'?'origin':'direct';
+ const railOptions={};for(const plan of plans)for(let i=0;i<plan.order.length-1;i++){const a=plan.order[i],b=plan.order[i+1],key=a+'>'+b;if(!(key in railOptions))railOptions[key]=routeRailChoices(graph,a,b);}
+ return {start:input.start,end:input.end,days,countries:codes,directCountries,catalogCountries,plans,arrivalConnections,railOptions};
+}
+

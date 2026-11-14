@@ -1,0 +1,112 @@
+{
+  "source": "https://airportmiles.com/api",
+  "generated": "2026-11-04",
+  "checked": "2026-11-13",
+  "derivedFile": "country-flights-data.js",
+  "internationalAirportPairs": 9688,
+  "notes": [
+    "Aeroportos e tempos estimados: OurAirports, Wikidata e AirportMiles, domínio público/CC0.",
+    "Catálogo de pares internacionais derivado de estatísticas abertas. Não contém malha atual confirmada nem horários de partidas.",
+    "Catálogo derivado redistribuído sob CC BY-SA 4.0 com atribuições preservadas. Campos em domínio público permanecem em domínio público."
+  ],
+  "licence": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "sources": [
+    {
+      "id": "t100",
+      "name": "U.S. DOT, Bureau of Transportation Statistics, T-100 Segment (all carriers, scheduled service)",
+      "url": "https://www.transtats.bts.gov/",
+      "licence": "Public domain (US federal work)",
+      "period": "2025-08…2026-07",
+      "fields": [
+        "routes[] with passengersSource \"t100\": passengers, seats, flights, airlines"
+      ]
+    },
+    {
+      "id": "eurostat",
+      "name": "Eurostat, avia_par_*",
+      "url": "https://ec.europa.eu/eurostat/web/transport/database",
+      "licence": "Reuse authorised with the source named (Eurostat copyright notice). Eurostat has no responsibility for the results of any re-use.",
+      "period": "2022, 2023, 2024",
+      "fields": [
+        "routes[] with passengersSource \"eurostat\": passengers, seats, flights, airlines"
+      ]
+    },
+    {
+      "id": "anac",
+      "name": "ANAC (Agência Nacional de Aviação Civil, Brazil), Dados Estatísticos do Transporte Aéreo",
+      "url": "https://www.gov.br/anac/pt-br/assuntos/dados-e-estatisticas/dados-estatisticos",
+      "licence": "CC BY (Creative Commons Attribution). Fonte: ANAC",
+      "period": "2025-10…2026-09",
+      "fields": [
+        "routes[] with passengersSource \"anac\": passengers, seats, flights, airlines"
+      ],
+      "note": "Scheduled flights, both directions, every airline."
+    },
+    {
+      "id": "incheon",
+      "name": "Incheon International Airport Corporation, passengers by airline and route (data.go.kr)",
+      "url": "https://www.data.go.kr/data/15062056/fileData.do",
+      "licence": "No restriction on use (이용허락범위 제한 없음). Source: Incheon International Airport Corporation",
+      "period": "2026-01…2026-06",
+      "fields": [
+        "routes[] with passengersSource \"incheon\": passengers, seats, flights, airlines"
+      ],
+      "note": "Scheduled passenger flights to and from Incheon, both directions, every airline. Published every half-year: the period has fewer than 12 months while the archive is young."
+    },
+    {
+      "id": "jac",
+      "name": "JAC (Junta de Aeronáutica Civil, Chile), Tráfico Aéreo (datos.gob.cl)",
+      "url": "https://datos.gob.cl/dataset/934b4b83-4fd4-476f-b8b4-ec5aa7e9157f",
+      "licence": "CC0 1.0 (datos.gob.cl). Source: Junta de Aeronáutica Civil (JAC), Chile",
+      "period": "2025-10…2026-09",
+      "fields": [
+        "routes[] with passengersSource \"jac\": passengers, seats, flights, airlines"
+      ],
+      "note": "Scheduled airlines to, from and within Chile, both directions, paid and free passengers. No flights or seats (null)."
+    },
+    {
+      "id": "siac",
+      "name": "Conectividad Aérea (Subsecretaría de Turismo, Argentina), from ANAC Argentina's Sistema Integrado de Aviación Civil (SIAC)",
+      "url": "https://datos.yvera.gob.ar/dataset/conectividad-aerea",
+      "licence": "CC BY 4.0. Fuente: Subsecretaría de Turismo, Conectividad Aérea, con datos de ANAC (SIAC)",
+      "period": "2025-08…2026-07",
+      "fields": [
+        "routes[] with passengersSource \"siac\": passengers, seats, flights, airlines"
+      ],
+      "note": "Scheduled flights by commercial airlines to, from and within Argentina, both directions, boarding passes per flight. The source names airlines: code is the IATA code where the name means one airline, else empty (LATAM, JetSMART, Sky Airline fly under several)."
+    },
+    {
+      "id": "bitre",
+      "name": "BITRE (Bureau of Infrastructure and Transport Research Economics, Australia), airline activity by city pair",
+      "url": "https://www.bitre.gov.au/statistics/aviation",
+      "licence": "CC BY 3.0 AU. Source: BITRE, © Commonwealth of Australia",
+      "period": "domestic 2025-08…2026-07; international 2025-07…2026-06",
+      "fields": [
+        "routes[] with passengersSource \"bitre\": passengers, seats, flights, airlines"
+      ],
+      "note": "Both directions. BITRE reports cities: matched to the airport only where the city has one with flights there. International city pairs have passengers only."
+    },
+    {
+      "id": "dgca",
+      "name": "DGCA (Directorate General of Civil Aviation, India), city-pair traffic, scheduled services (provisional)",
+      "url": "https://www.dgca.gov.in/digigov-portal/",
+      "licence": "Reproduced free of charge with the source acknowledged (DGCA website policy). Source: DGCA, India",
+      "period": "domestic 2025-10…2026-09; international 2025-01…2025-12",
+      "fields": [
+        "routes[] with passengersSource \"dgca\": passengers, seats, flights, airlines"
+      ],
+      "note": "Both directions, provisional. DGCA reports cities: matched to the airport only where the name means one. No airlines or flights."
+    },
+    {
+      "id": "aerocivil",
+      "name": "Aerocivil (Unidad Administrativa Especial de Aeronáutica Civil, Colombia), Transporte Aéreo – Tráfico por Equipo (datos.gov.co)",
+      "url": "https://www.datos.gov.co/d/djjf-g4q4",
+      "licence": "CC BY-SA 4.0: share-alike, the figures derived from it (sums by pair, airline and month) stay under CC BY-SA 4.0. Fuente: Unidad Administrativa Especial de Aeronáutica Civil (Aerocivil), Colombia",
+      "period": "2025-07…2026-06",
+      "fields": [
+        "routes[] with passengersSource \"aerocivil\": passengers, seats, flights, airlines"
+      ],
+      "note": "Scheduled flights to, from and within Colombia, both directions, paid passengers on board. Airline code: the IATA code where we matched the ICAO code the source gives by hand, else empty. CC BY-SA 4.0: share what you build from these figures under the same licence."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+'use strict';
+function trainEscape(value){return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
+function railTime(minutes){return `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;}
+function railDate(date){return date.split('-').reverse().join('/');}
+function railDays(dates){const names=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];return dates.map(date=>`${names[new Date(date+'T12:00:00Z').getUTCDay()]} ${date.slice(8,10)}/${date.slice(5,7)}`).join(' · ');}
+function weeklyTrainSchedule(route){
+ const entry=railWeek.entries[route.id+':'+route.originCountry];
+ if(!entry?.rows.length&&route.departureReference?.[route.originCountry])return `<p class="train-week-note">Saída na grade-base da operadora: ${trainEscape(route.departureReference[route.originCountry])}. Horário de chegada e confirmação específica desta semana ainda não verificados.</p>`;
+ if(!entry?.rows.length)return '<p class="train-week-unavailable">Dias e horários deste sentido: ainda não verificados. Consulte a grade da companhia no link abaixo.</p>';
+ const period=`${railDate(entry.periodStart||railWeek.start)} a ${railDate(entry.periodEnd||railWeek.end)}`;
+ return `<section class="train-week"><h4>Grade semanal de referência</h4><p class="train-week-period">${period} · Horários locais de cada estação</p>${entry.baseTimetable?'<p class="train-week-note">Grade-base da operadora; confirme eventuais alterações para a semana.</p>':''}${entry.partial?'<p class="train-week-note">Cobertura parcial: somente as datas e partidas confirmadas abaixo.</p>':''}<div class="train-week-scroll" tabindex="0" role="region" aria-label="Tabela semanal de partidas"><table><thead><tr><th scope="col">Dias / datas</th><th scope="col">Saída</th><th scope="col">Chegada</th><th scope="col">Trem · Companhia</th></tr></thead><tbody>${entry.rows.map(row=>`<tr><td>${railDays(row.dates)}</td><td>${railTime(row.departure)}</td><td>${railTime(row.arrival)}${row.arrivalDay?` <small>+${row.arrivalDay} dia</small>`:''}</td><td><strong>${trainEscape(row.train)}</strong><span>${trainEscape(row.operator)}</span><small>${trainEscape(row.from)} → ${trainEscape(row.to)}</small></td></tr>`).join('')}</tbody></table></div><p class="train-week-note">Partidas cadastradas neste sentido; a fonte pode não cobrir todos os serviços. Não aplique estes horários a outras semanas.</p><a class="schedule-source" href="${trainEscape(entry.source)}" target="_blank" rel="noopener noreferrer">Fonte da grade ↗</a></section>`;
+}
