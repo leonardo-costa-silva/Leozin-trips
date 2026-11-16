@@ -73,3 +73,7 @@ Verificações adicionais em destinations-tests.cjs:
 - Preferências de cidades têm penalidade no motor quando o aeroporto/estação não corresponde à seleção; deslocamentos locais continuam identificados como pendentes.
 
 Downloads reais: GeoNames, guias Wikivoyage e metadados/licenças de fotos Wikimedia Commons, com cache e poucas consultas simultâneas. Não há consulta paga nem média real de preços/milhas disponível nesta versão.
+
+## 16/11/2026 — novas melhorias
+
+Executar `node tests.cjs`. A suíte journey-tests.cjs usa o HTML e a ordem real dos scripts em DOM simulado, cobrindo planejamento, distribuição de noites e datas, uma diária e excesso de cidades, limite de calendário extenso, cálculo de orçamento de grupo, pendências, compartilhamento Unicode, validação/importação com revisão, limpeza e resumo. Verifica cache cambial persistido, reaproveitamento offline, duas consultas simultâneas sem duplicação, agenda de 30 min e aviso de referência antiga. As suítes anteriores continuam cobrindo continentes, fontes, rotas, temporadas, guias e tarifas. Verificação visual e publicação são informadas separadamente no chat após a implantação.

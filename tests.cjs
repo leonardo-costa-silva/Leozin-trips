@@ -12,3 +12,5 @@ require('./trip-tests.cjs');
 require('./route-planner-tests.cjs');
 
 require('./destinations-tests.cjs');
+
+require('./journey-tests.cjs');
