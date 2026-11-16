@@ -1,5 +1,5 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
-const read=f=>fs.readFileSync(path.join(__dirname,f),'utf8');
+const read=f=>fs.readFileSync(path.join(__dirname,f.split('?')[0]),'utf8');
 class Element{constructor(){this.innerHTML='';this.textContent='';this.attrs={};this.handlers={};this.open=false;this.classes={};this.classList={toggle:(name,value)=>{this.classes[name]=value;}};}setAttribute(k,v){this.attrs[k]=v;}addEventListener(k,f){this.handlers[k]=f;}showModal(){this.open=true;}close(){this.open=false;}}
 const profiles=JSON.parse(read('continents.json'));let total=0;
 for(const profile of profiles){const html=read(profile.slug+'.html'),els={};for(const [,id]of html.matchAll(/id="([^"]+)"/g)){assert(!els[id]);els[id]=new Element();}const context=vm.createContext({CONTINENT_KEY:profile.slug,CONTINENT_NAME:profile.name,fetch:()=>new Promise(()=>{}),AbortSignal:{timeout:()=>({})},document:{getElementById:id=>{assert(els[id],id);return els[id];}}});
@@ -12,7 +12,7 @@ for(const profile of profiles){const html=read(profile.slug+'.html'),els={};for(
  for(const flight of run('directFlights.filter(f=>activeCountries.some(c=>c.code===f.country))')){assert(els.countryGrid.innerHTML.includes(flight.city));assert(els.countryGrid.innerHTML.includes(flight.duration));assert(flight.weekdays.every(s=>s.days.length&&s.days.every(d=>d>=1&&d<=7)));}
  els.currencyToggle.handlers.click();assert.equal(count(),run('activeCountries.filter(c=>flightsForCountry(c.code).length>0&&currencyBelowReal(c)).length'));els.directToggle.handlers.click();assert.equal(count(),run('activeCountries.filter(currencyBelowReal).length'));assert(els.countryGrid.classes['selected-list']);els.currencyToggle.handlers.click();assert.equal(count(),profile.count);assert(!els.countryGrid.classes['selected-list']);
  assert(html.includes('Primavera')&&html.includes('Verão')&&html.includes('Outono')&&html.includes('Inverno'));if(profile.climate==='both')assert(html.includes('Norte:')&&html.includes('Sul:'));if(profile.climate==='tropical')assert(html.includes('seca')&&html.includes('chuvosa'));
- for(const [,file]of html.matchAll(/(?:src|href)="([^"#:]+\.(?:js|css|html))"/g))assert(fs.existsSync(path.join(__dirname,file)),file);
+ for(const [,file]of html.matchAll(/(?:src|href)="([^"#:]+\.(?:js|css|html))"/g))assert(fs.existsSync(path.join(__dirname,file.split('?')[0])),file);
  if(profile.slug==='oceania'){els.directToggle.handlers.click();assert.equal(count(),0);assert(els.countryGrid.innerHTML.includes('Nenhum país'));}
  total+=profile.count;console.log(`OK ${profile.name}: ${profile.count} países, bandeiras, moedas, idiomas, dois filtros, rotas inline, estações e retorno à lista.`);
 }

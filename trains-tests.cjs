@@ -1,4 +1,4 @@
-const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');const read=f=>fs.readFileSync(path.join(__dirname,f),'utf8');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');const read=f=>fs.readFileSync(path.join(__dirname,f.split('?')[0]),'utf8');
 class Element{constructor(){this.innerHTML='';this.textContent='';this.attrs={};this.handlers={};this.open=false;this.classList={toggle(){}};}setAttribute(k,v){this.attrs[k]=v;}addEventListener(k,f){this.handlers[k]=f;}showModal(){this.open=true;}close(){this.open=false;}}
 const html=read('europa.html'),els={};for(const [,id]of html.matchAll(/id="([^"]+)"/g))els[id]=new Element();
 const context=vm.createContext({CONTINENT_KEY:'europa',CONTINENT_NAME:'Europa',fetch:()=>new Promise(()=>{}),AbortSignal:{timeout:()=>({})},document:{getElementById:id=>{assert(els[id],id);return els[id];}}});

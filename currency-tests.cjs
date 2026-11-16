@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');
-const read=f=>fs.readFileSync(path.join(__dirname,f),'utf8');
+const read=f=>fs.readFileSync(path.join(__dirname,f.split('?')[0]),'utf8');
 async function check(responses){let calls=0;const status={};const context=vm.createContext({AbortSignal:{timeout:()=>({})},document:{getElementById:()=>status},renderCountries(){},fetch:async()=>{const item=responses[calls++];if(item instanceof Error)throw item;return {ok:true,json:async()=>item};}});vm.runInContext(read('country-info.js')+'\n'+read('currency-snapshot.js')+'\n'+read('currency.js'),context);await vm.runInContext('refreshCurrency()',context);return {calls,status,run:s=>vm.runInContext(s,context)};}
 module.exports=(async()=>{
  const snapshot=vm.runInNewContext(read('currency-snapshot.js')+';bundledRates');

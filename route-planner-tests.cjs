@@ -1,4 +1,4 @@
-const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');const read=f=>fs.readFileSync(path.join(__dirname,f),'utf8');
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');const read=f=>fs.readFileSync(path.join(__dirname,f.split('?')[0]),'utf8');
 const baseFiles=['europe-data.js','country-info.js','world-data.js','world-flights.js','europe-trains.js','world-trains.js','country-flights-data.js','trip-core.js','route-planner-core.js'];
 const ctx=vm.createContext({});for(const file of baseFiles)vm.runInContext(read(file),ctx);const run=code=>vm.runInContext(code,ctx),plain=value=>JSON.parse(JSON.stringify(value));const input=countries=>({start:'2027-04-05',end:'2027-04-25',countries});const plan=countries=>plain(run(`planTripRoutes(${JSON.stringify(input(countries))})`));
 assert(run("planTripRoutes({start:'2027-02-30',end:'2027-03-05',countries:['FR']}).error"));assert(run("planTripRoutes({start:'2027-03-05',end:'2027-03-01',countries:['FR']}).error"));assert(run("planTripRoutes({start:'2027-03-01',end:'2027-03-05',countries:[]}).error"));
