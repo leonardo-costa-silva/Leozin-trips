@@ -10,3 +10,5 @@ require('./global-features-tests.cjs');
 require('./trip-tests.cjs');
 
 require('./route-planner-tests.cjs');
+
+require('./destinations-tests.cjs');

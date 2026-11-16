@@ -97,3 +97,16 @@ Entradas com conexão compara até três referências por país. Prioriza mesmo 
 Cada opção de rota tem Também compare os trens, com as ligações ferroviárias entre os destinos consecutivos, inclusive quando o transporte principal sugerido for avião. Mostra até três referências com cidades/estações, operadora, duração, fonte e aviso sazonal quando existente. Quando não há trem direto cadastrado, tenta uma ligação com troca por um país intermediário, identificada como tal. Pode haver mudança de estação; espera e deslocamentos internos não são estimados. Sem referência suficiente, informa falta de cobertura, sem afirmar inexistência de serviço.
 
 As sugestões continuam baseadas em dados locais parciais e referências históricas; melhores conexões significa a classificação heurística descrita acima, não uma consulta ao inventário atual das companhias. Em seleções grandes a busca permanece limitada, sem garantia de encontrar todas as alternativas.
+
+## Atualização de seleção, cidades e guias — 15/11/2026
+- Datas aplicadas obrigatórias para escolher novos países; busca por nome sem diferenciar acentos, ao lado do filtro de continente, limpa após selecionar um país.
+- Resumo abaixo dos filtros com bandeira, nome e continente(s); todos os cartões mostram continente e temporada relativa ao período escolhido.
+- Limpar tudo antes da etapa 01 redefine datas, países, cidades e filtros e invalida rotas anteriores.
+- Etapa 03 para cidades sugeridas de cada país, com opção de adicionar outra cidade. As seleções são salvas com o planejamento, removidas ao desmarcar o país e orientam a preferência por aeroportos/estações nas rotas. Não se afirma que todos os deslocamentos internos ou dias por cidade estejam resolvidos.
+- Os 197 países têm Guia do país nas páginas de continente, apontando para uma página própria em paises/{ISO}.html. Informações essenciais, imagens creditadas e destaques por cidade/país. Fontes e limites em DESTINATIONS-SOURCES.md; fotos remotas precisam de internet.
+- Passagens de GRU: filtro de mês/ano e companhia nos dados de voos diretos, com campos separados para média de ida em reais e em milhas/pontos por programa. O cálculo exige no mínimo três amostras verificadas, só ida, sem escala, mesma rota, mês, cabine e companhia. Programas não são misturados.
+
+### Limitação dos preços
+fare-data.js começa sem amostras: os campos monetários e de milhas ficam indisponíveis nesta publicação. As fontes gratuitas consultadas não forneceram um histórico comparável por mês da viagem, companhia e programa. Não foram inventadas médias, divididos preços de ida/volta por dois nem convertidos reais em milhas. O mês é da viagem; uma estatística por mês de compra não foi tratada como equivalente. Acrescentar uma fonte apropriada ou uma coleta verificada é necessário para exibir médias reais. As páginas oficiais de LATAM Pass e Azul consultadas descrevem resgates/ofertas; não constituem essa série mensal.
+
+Implementação: destinations-data.js, trip-cities.js, country-guide.js/css, fare-data.js e fare-ui.js. Testes adicionais: destinations-tests.cjs.

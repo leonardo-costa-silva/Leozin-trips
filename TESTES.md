@@ -62,3 +62,14 @@ Aprovados os testes atualizados de rotas e interface:
 - O teste de 197 países continua completo; o tempo observado aumentou para cerca de 7 segundos neste ambiente. Não é uma promessa de desempenho em outros dispositivos.
 
 DOM simulado; não houve nova inspeção visual em navegador. Nenhuma fonte passou a representar consulta de disponibilidade na data escolhida.
+
+## Seleção, cidades, destinos e tarifas — 15/11/2026
+Verificações adicionais em destinations-tests.cjs:
+- Bloquear seleção de países sem datas aplicadas; validação inclusive por chamada de evento; habilitar após Aplicar.
+- Busca sem acentos, interseção com continente, limpeza ao selecionar, resumo dos escolhidos com bandeiras/continentes e temporada nos 197 cartões.
+- Etapa de cidades, seleção/desmarcação, cidade adicionada pelo usuário, poda de cidades ao remover país e redefinição completa do formulário.
+- 197 páginas próprias existentes e executadas em DOM simulado: nome, fatos, foto creditada e pontos turísticos ou destaques do país; arquivos relativos válidos. Fotos e links externos não foram validados visualmente por essa suíte.
+- Filtros de mês e companhia nas referências de voos; médias em dinheiro e milhas calculadas somente em fixtures sintéticas de teste, com isolamento de mês, companhia e programa. fare-data.js de produção permanece vazio e a interface mostra indisponibilidade. Nenhuma fixture de preço de teste foi enviada como cotação real.
+- Preferências de cidades têm penalidade no motor quando o aeroporto/estação não corresponde à seleção; deslocamentos locais continuam identificados como pendentes.
+
+Downloads reais: GeoNames, guias Wikivoyage e metadados/licenças de fotos Wikimedia Commons, com cache e poucas consultas simultâneas. Não há consulta paga nem média real de preços/milhas disponível nesta versão.
